@@ -29,9 +29,14 @@
             >出库</el-button
           >
 
+          <el-button size="small" type="info" plain @click="openLogs(scope.row)"
+            >明细</el-button
+          >
+
           <el-button size="small" circle @click="editItem(scope.row)"
             >✏️</el-button
           >
+
           <el-button
             size="small"
             type="danger"
@@ -42,6 +47,20 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-drawer v-model="drawerVisible" title="操作记录" size="40%">
+      <el-table :data="logs" stripe>
+        <el-table-column prop="createTime" label="时间" width="180" />
+        <el-table-column prop="type" label="类型" width="80">
+          <template #default="scope">
+            <el-tag :type="scope.row.type === '入库' ? 'success' : 'warning'">
+              {{ scope.row.type }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="count" label="数量" />
+      </el-table>
+    </el-drawer>
 
     <el-dialog
       v-model="dialogVisible"
@@ -195,6 +214,23 @@ const handleStockOp = (row, type) => {
     .catch(() => {
       // 用户点了取消，不做任何事
     });
+};
+
+const drawerVisible = ref(true);
+const logs = ref([]);
+
+const openLogs = async (row) => {
+  // 1. 先打开抽屉
+  drawerVisible.value = true;
+  logs.value = []; // 先清空，防止显示上一次的数据
+
+  // 2. 调后端接口查数据
+  try {
+    const res = await axios.get(`${API_URL}/${row.id}/logs`);
+    logs.value = res.data;
+  } catch (error) {
+    console.error("获取日志失败", error);
+  }
 };
 
 onMounted(() => {
